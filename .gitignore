@@ -1,0 +1,7 @@
+# MATLAB
+*.asv
+inpaint_nans.m
+data/
+
+# Mac files
+.DS_Store
