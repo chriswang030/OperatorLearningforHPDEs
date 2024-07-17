@@ -6,7 +6,7 @@ The figures used in the paper were generated with the default parameters in `mai
 
 ## Dependencies
 
-Our code requires [chebfun](https://www.chebfun.org/), which is available for download [here](https://www.chebfun.org/download/). Plotting some of the figures requires [inpaint\_nans](https://www.mathworks.com/matlabcentral/fileexchange/4551-inpaint_nans), an interpolation function written by John D'Errico.
+Our code requires [chebfun](https://www.chebfun.org/), which is available for download [here](https://www.chebfun.org/download/). Plotting some of the figures requires [inpaint_nans](https://www.mathworks.com/matlabcentral/fileexchange/4551-inpaint_nans), an interpolation function written by John D'Errico.
 
 ## Usage 
 
