@@ -2,7 +2,7 @@
 
 This repository holds the code used in the paper "Operator learning for hyperbolic partial differential equations," available on the [arXiv](https://arxiv.org/abs/2312.17489).
 
-The figures used in the paper were generated with the default parameters in `main.m`. The code was run on an 64-core AMD Opteron with 512GB of RAM, using MATLAB version 9.13.0.2105380 (R2022b), Update 2.
+The figures used in the paper were generated with the default parameters in `main.m`. The code was run on a 64-core AMD Opteron with 512GB of RAM and a 16-core Xeon E5-2640 with 256GB of RAM, using MATLAB version 9.13.0.2105380 (R2022b), Update 2.
 
 ## Dependencies
 
@@ -13,6 +13,8 @@ Our code requires [chebfun](https://www.chebfun.org/), which is available for do
 Simply place `chebfun` and `inpaint_nans.m` into the folder with the rest of the code. Add them to your path and run `main.m`. This runs Algorithm 2 of the aforementioned paper, saves all the relevant variables to a `.mat` file, and saves a figure containing three plots: 1) the approximate Green's function overlaid with partition blocks 2) the actual Green's function 3) the L2 error. *Note: The code will attempt to run in parallel; to avoid this, replace the function CONSTRUCTPAR with CONSTRUCT in `main.m`. Arguments will need to be modified.*
 
 Several parameters are available for modification, all of which are described in `main.m`. In theory, the Green's function `G` can be replaced by any anonymous function with the same arguments and output.
+
+To run the version of our algorithm that generates input-output data from a numerical solver (implemented in `solve_uw1.m` and `solve_c2.m`), run `mainbb.m`. All code files related to this "black-box" version has the suffix "...bb.m".
 
 ## Disclaimer
 
