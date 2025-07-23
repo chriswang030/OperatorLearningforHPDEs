@@ -1,4 +1,4 @@
-function [U, S, V, mvs] = rsvd(A, k, p, q, Wl, Wr, K)
+function [U,S,V,mvs] = rsvd(A,k,p,q,Wl,Wr,K)
 %% RSVD
 %   Randomized SVD (Algorithm 1). 
 %   (N. Halko, P.-G. Martinsson, J. A. Tropp, SIAM Review, 2011)
@@ -17,27 +17,26 @@ function [U, S, V, mvs] = rsvd(A, k, p, q, Wl, Wr, K)
 %   * (optional) K  : n x n covariance kernel
 % 
 %   Output:
-%   * U   : n x (k+p) orthonormal columns, left singular vectors
-%   * S   : (k+p) x (k+p) diagonal matrix of singular values
-%   * V   : n x (k+p) orthonormal columnsm, right singular vectors
+%   * U   : n x k orthonormal columns, left singular vectors
+%   * S   : k x k diagonal matrix of singular values
+%   * V   : n x k orthonormal columns, right singular vectors
 %   * mvs : number of matvecs
 
 arguments
     A  (:,:) double
-    k  (1,1) double
-    p  (1,1) double
-    q  (1,1) double
+    k  (1,1) uint64
+    p  (1,1) uint64
+    q  (1,1) uint64
     Wl (:,1) double = ones(size(A,1),1)
     Wr (:,1) double = ones(size(A,2),1)
     K  (:,:) double = []
 end
 
-m = size(A,2);
-
+n = size(A,1);
 if isempty(K)
-    X = randn(m,k+p);
+    X = randn(n,k+p);
 else
-    X = mvnrnd(zeros(1,m), K, k+p)';
+    X = mvnrnd(zeros(1,n), K, k+p)';
 end
 
 if q > 0
@@ -53,6 +52,15 @@ B = Q' * (Wl.*A);
 U = Q * U1;
 V = Q1 * V1;
 
-mvs = (2*q+2)*(k+p);
+U = U(:,1:k);
+V = V(:,1:k);
+S = S(1:k,1:k);
 
+mvs = (2*q+2)*(k+p);
+end
+
+function [Q,R] = qrw(A,W)
+V = sqrt(W);
+[U,R] = qr(V.*A,'econ');
+Q = (1./V) .* U;
 end

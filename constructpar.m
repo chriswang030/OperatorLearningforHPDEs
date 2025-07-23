@@ -1,5 +1,5 @@
-function [tree, data, redvol, height, errabs, errrel, mvs] = ...
-    constructpar(G, k, p, q, tol, C, N, maxlevel, prelevel, verbose)
+function [tree,data,redvol,height,errabs,errrel,mvs] = ...
+    constructpar(G,k,p,q,tol,C,N,maxlevel,prelevel,verbose)
 %% CONSTRUCTPAR
 %   Use parallel workers to construct the approximate Green's function in a 
 %   hierarchical, memory-efficient data structure (Algorithm 2).
@@ -11,9 +11,9 @@ function [tree, data, redvol, height, errabs, errrel, mvs] = ...
 %   * q      : power iterations
 %   * tol    : error tolerance
 %   * (optional) C        : positive scalar value, or vector for different 
-%                           C per level, for rank test = 4
-%   * (optional) N        : discretization dimension = 15
-%   * (optional) maxlevel : hierarchy level cap = 10
+%                           C per level, for rank test = 1
+%   * (optional) N        : discretization dimension = 6
+%   * (optional) maxlevel : hierarchy level cap = 5
 %   * (optional) prelevel : levels to perform preparallelization = 0
 %   * (optional) verbose  : verbosity (values can be 0, 1 or 2) = 0
 % 
@@ -24,24 +24,25 @@ function [tree, data, redvol, height, errabs, errrel, mvs] = ...
 %   * height : final height of tree
 %   * errabs : absolute approximation error in the L2 norm
 %   * errrel : relative approximation error in the L2 norm
-%   * mvs    : number of matvecs used
+%   * mvs    : vector of number of matvecs used per level
 
 arguments
     G        function_handle
-    k        (1,1) double
-    p        (1,1) double
-    q        (1,1) double
+    k        (1,1) uint64
+    p        (1,1) uint64
+    q        (1,1) uint64
     tol      (1,1) double
-    C        (:,1) double = 4
-    N        (1,1) double = 15      
-    maxlevel (1,1) double = 10
+    C        (:,1) double = 1
+    N        (1,1) double = 6      
+    maxlevel (1,1) double = 5
     prelevel (1,1) double = 0
     verbose  (1,1) int8 = 0
 end
 
 % run pre-parallel
-[tree, data, reds, ~, level, lent, lend, ~, ~, errg, mvs] = ...
+[tree,data,reds,~,level,lent,lend,~,~,errg,mvs] = ...
     construct(G,k,p,q,tol,C,N,prelevel,verbose);
+mvs = [mvs zeros(1,maxlevel-prelevel)];
 
 % update C if needed
 pC = C(end);
@@ -58,13 +59,12 @@ pheight = zeros(lenr,1);
 plent = zeros(lenr,1);
 plend = zeros(lenr,1);
 perrabs = zeros(lenr,1);
-pmvs = zeros(lenr,1);
+pmvs = zeros(lenr,maxlevel+1);
 
 % parallel loop
 parfor i = 1:lenr
-%for i = 1:lenr
     coord = reds(i,1:4);            % get coords of a red block
-    [pt, pd, ~, pr, ph, plt, pld, pe, ~, ~, pm] = ...
+    [pt,pd,~,pr,ph,plt,pld,pe,~,~,pm] = ...
         construct(G,k,p,q,tol/lenr,pC*lenr,N,maxlevel,false,level,coord,verbose,i);
     ptree{i} = pt;
     pdata{i} = pd;
@@ -73,7 +73,7 @@ parfor i = 1:lenr
     plent(i) = plt;
     plend(i) = pld;
     perrabs(i) = pe;
-    pmvs(i) = pm;
+    pmvs(i,:) = pm;
 end
 
 % reconstruct tree and data
@@ -86,7 +86,7 @@ for i = 1:lenr
     pt = ptree{i};                              % copy tree from one worker
     pt = [pt ; zeros(plent(i)-length(pt),1)];   % extend by zero if needed
     pt = pt(2:end);                             % remove first element for splicing
-    pt(pt > 0) = pt(pt > 0) + lent - 1;         % shift tree indices for positive entries
+    pt(pt > 0) = pt(pt > 0)+lent - 1;         % shift tree indices for positive entries
     pt(pt < 0) = pt(pt < 0) - lend;             % shift data indices for negative entries
     tree(lent+1:lent+plent(i)-1) = pt;          % copy over pt
     data(lend+1:lend+plend(i),:) = pdata{i};    % copy over pd
@@ -102,14 +102,13 @@ end
 redvol = sum(predvol);
 height = max(pheight);
 errabs = sqrt(errg^2 + sum(perrabs.^2));
-mvs = mvs + sum(pmvs);
+mvs = mvs + sum(pmvs,1);
 
 % compute final relative error
-[xx, wx] = legpts(100, [0 1]);
+[xx,wx] = legpts(100,[0 1]);
 [xx,tt,yy,ss] = ndgrid(xx,xx,xx,xx);
-Gch = reshape(G(xx,tt,yy,ss), 100^2, 100^2);
-W = reshape(wx'*wx, 100^2, 1);
+Gch = reshape(G(xx,tt,yy,ss),100^2,100^2);
+W = reshape(wx'*wx,100^2,1);
 Gnorm = sqrt(W' * Gch.^2 * W);
 errrel = errabs / Gnorm;
-
 end
